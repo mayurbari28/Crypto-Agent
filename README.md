@@ -1,5 +1,3 @@
-Description: Project overview, setup, and usage instructions.
-```markdown
 # Agentic AI Trading System for CoinDCX (Spot & Futures)
 
 Python + Streamlit + CrewAI (optional) application that:
@@ -50,6 +48,34 @@ Important: This tool is for research and automation support. Not financial advic
    - Copy `.env.example` to `.env` and set values.
    - Default MODE is `paper`. For safety, live orders are disabled unless MODE=live.
 
+5. Setup & Deployment Instructions
+   - Prerequisites: Python 3.10+, Git. Optional: Docker.
+   - Steps:
+     - Clone repository.
+     - Create virtual environment and install dependencies from requirements.txt.
+     - Copy .env.example to .env, set MODE=paper for testing; optionally fill API keys and OPENAI_API_KEY for CrewAI.
+     - Run: streamlit run app/streamlit_app.py
+     - Use the UI pages to configure strategies, run screener, and monitor portfolio.
+   - Live trading:
+     - Switch MODE=live only after thorough paper testing.
+     - Input API keys via API & Keys page and test connectivity.
+     - Ensure correct permissions on CoinDCX for order placement.
+     - Validate adapter endpoints against current docs, especially order placement paths and parameters.
+   - Deployment:
+     - Containerize if desired; mount persistent volume for DB and secrets.
+     - Running behind reverse proxy is optional. Add auth if exposing publicly.
+
+6. Final Notes (any important considerations, limitations, or next steps)
+   - This is a complete, runnable system in simulation (paper/dryrun) mode with agentic scaffolding. Live trading requires adapter endpoint verification and careful risk validation.
+   - Next steps:
+     - Implement live OCO/bracket orders if CoinDCX supports them; else maintain monitor-based TP/SL.
+     - Add websocket subscriptions for price and order updates.
+     - Expand CrewAI agents for deeper reasoning and risk critique, plus calibration based on realized hit ratios.
+     - Integrate Telegram/webhook alerts.
+     - Improve backtesting with vectorbt or custom engine, including commission/slippage models and futures fees.
+   - Safety:
+     - Keep Kill Switch visible; use global limits in Risk Center.
+  
 ## Run
 
 - Start Streamlit:
@@ -107,33 +133,3 @@ pytest app/tests -q
 ## Disclaimer
 
 This software is provided "as is" without warranty. Crypto trading involves significant risk. You are responsible for any financial losses.
-```
-
-6. Setup & Deployment Instructions
-- Prerequisites: Python 3.10+, Git. Optional: Docker.
-- Steps:
-  - Clone repository.
-  - Create virtual environment and install dependencies from requirements.txt.
-  - Copy .env.example to .env, set MODE=paper for testing; optionally fill API keys and OPENAI_API_KEY for CrewAI.
-  - Run: streamlit run app/streamlit_app.py
-  - Use the UI pages to configure strategies, run screener, and monitor portfolio.
-- Live trading:
-  - Switch MODE=live only after thorough paper testing.
-  - Input API keys via API & Keys page and test connectivity.
-  - Ensure correct permissions on CoinDCX for order placement.
-  - Validate adapter endpoints against current docs, especially order placement paths and parameters.
-- Deployment:
-  - Containerize if desired; mount persistent volume for DB and secrets.
-  - Running behind reverse proxy is optional. Add auth if exposing publicly.
-
-7. Final Notes (any important considerations, limitations, or next steps)
-- This is a complete, runnable system in simulation (paper/dryrun) mode with agentic scaffolding. Live trading requires adapter endpoint verification and careful risk validation.
-- Next steps:
-  - Implement live OCO/bracket orders if CoinDCX supports them; else maintain monitor-based TP/SL.
-  - Add websocket subscriptions for price and order updates.
-  - Expand CrewAI agents for deeper reasoning and risk critique, plus calibration based on realized hit ratios.
-  - Integrate Telegram/webhook alerts.
-  - Improve backtesting with vectorbt or custom engine, including commission/slippage models and futures fees.
-- Safety:
-  - Keep Kill Switch visible; use global limits in Risk Center.
-  - Start sma
