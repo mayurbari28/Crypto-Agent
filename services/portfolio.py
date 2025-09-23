@@ -1,6 +1,6 @@
 #Description: Portfolio service managing balances, equity, positions, orders, events.
 import pandas as pd
-from datetime import datetime
+from datetime import datetime,timezone
 from threading import Lock
 
 from utils.logging import logger
@@ -97,7 +97,7 @@ class PortfolioService:
     def record_snapshot(self):
         eq = self.get_equity()
         with get_session() as s:
-            s.add(PortfolioSnapshot(ts=datetime.utcnow(), equity=eq, cash_spot=self._balances["spot_usdt"],
+            s.add(PortfolioSnapshot(ts=datetime.now(timezone.utc), equity=eq, cash_spot=self._balances["spot_usdt"],
                                     cash_futures=self._balances["futures_usdt"], margin_used=0.0, exposure_json={}))
             s.commit()
 

@@ -2,7 +2,7 @@
 
 from sqlalchemy.orm import declarative_base, relationship, Mapped, mapped_column
 from sqlalchemy import Integer, String, Float, DateTime, JSON, ForeignKey, Boolean
-from datetime import datetime
+from datetime import datetime,timezone
 
 #TODO check Base.metadata.create_all(bind=engine) <= orm.py
 Base = declarative_base()
@@ -24,7 +24,7 @@ class Candle(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     symbol: Mapped[str] = mapped_column(String, index=True)
     timeframe: Mapped[str] = mapped_column(String)
-    ts_open: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    ts_open: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
     open: Mapped[float] = mapped_column(Float)
     high: Mapped[float] = mapped_column(Float)
     low: Mapped[float] = mapped_column(Float)
@@ -36,7 +36,7 @@ class FeatureSnapshot(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     symbol: Mapped[str] = mapped_column(String, index=True)
     timeframe: Mapped[str] = mapped_column(String)
-    ts: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    ts: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
     features: Mapped[dict] = mapped_column(JSON)
 
 class Signal(Base):
@@ -45,7 +45,7 @@ class Signal(Base):
     symbol: Mapped[str] = mapped_column(String, index=True)
     market: Mapped[str] = mapped_column(String, default="spot")
     timeframe: Mapped[str] = mapped_column(String)
-    ts: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    ts: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
     strategy: Mapped[str] = mapped_column(String, default="ensemble_v1")
     confidence: Mapped[float] = mapped_column(Float)
     expected_return_pct: Mapped[float] = mapped_column(Float)
@@ -67,8 +67,8 @@ class Order(Base):
     qty: Mapped[float] = mapped_column(Float)
     price: Mapped[float] = mapped_column(Float)
     status: Mapped[str] = mapped_column(String, default="new")  # new/filled/partial/canceled
-    ts_created: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    ts_updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    ts_created: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
+    ts_updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
     sl_price: Mapped[float | None] = mapped_column(Float, nullable=True)
     tp_price: Mapped[float | None] = mapped_column(Float, nullable=True)
     reduce_only: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -87,14 +87,14 @@ class Position(Base):
     leverage: Mapped[int] = mapped_column(Integer, default=1)
     sl: Mapped[float | None] = mapped_column(Float, nullable=True)
     tp: Mapped[float | None] = mapped_column(Float, nullable=True)
-    ts_open: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    ts_open: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
     ts_close: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     status: Mapped[str] = mapped_column(String, default="open")  # open/closed
 
 class PortfolioSnapshot(Base):
     __tablename__ = "portfolio_snapshots"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    ts: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    ts: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
     equity: Mapped[float] = mapped_column(Float)
     cash_spot: Mapped[float] = mapped_column(Float)
     cash_futures: Mapped[float] = mapped_column(Float)
@@ -104,7 +104,7 @@ class PortfolioSnapshot(Base):
 class Alert(Base):
     __tablename__ = "alerts"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    ts: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    ts: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
     level: Mapped[str] = mapped_column(String)
     message: Mapped[str] = mapped_column(String)
     context: Mapped[dict] = mapped_column(JSON)

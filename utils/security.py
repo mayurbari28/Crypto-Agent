@@ -13,13 +13,19 @@ class SecretsVault:
 
     def __init__(self):
         key = settings.ENCRYPTION_KEY
+        key_path = Path(".key")
         if not key:
-            key_path = Path(".key")
             if key_path.exists():
-                key = key_path.read_text().strip().encode()
+                key_txt = key_path.read_text().strip()
+                # Validate the length to catch truncated/bad keys
+                if len(key_txt) != 44:
+                    raise ValueError(f"Key in {key_path} is invalid length for Fernet (should be 44 base64 chars)")
+                key = key_txt.encode()
             else:
                 key = Fernet.generate_key()
                 key_path.write_text(key.decode())
+        else:
+            key = key.encode() if isinstance(key, str) else key
         self.fernet = Fernet(key)
         self.path = Path(".secrets.json")
         if not self.path.exists():

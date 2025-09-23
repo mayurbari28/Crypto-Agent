@@ -3,7 +3,7 @@
 import pandas as pd
 import numpy as np
 import pandas_ta as ta
-from datetime import datetime
+from datetime import datetime,timezone
 from threading import Lock
 from utils.logging import logger
 from models.schemas import SignalOut
@@ -97,7 +97,7 @@ class SignalService:
             out.append(sig)
         # Sort by confidence and expected return
         out.sort(key=lambda s: (s.confidence, s.expected_return_pct), reverse=True)
-        self._logs.append(f"{datetime.utcnow()} Generated {len(out)} signals for tf={timeframe}")
+        self._logs.append(f"{datetime.now(timezone.utc)} Generated {len(out)} signals for tf={timeframe}")
         return out
 
     def quick_backtest(self, df: pd.DataFrame) -> dict:

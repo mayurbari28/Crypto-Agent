@@ -5,6 +5,13 @@ from services.market_data import MarketDataService
 from services.execution import ExecutionService
 from services.monitor import MonitorService
 from services.portfolio import PortfolioService
+from utils.config import settings
+from models.orm import Base
+
+import pytest
+from sqlalchemy import create_engine
+
+
 
 def test_signal_scan():
     sig = SignalService.instance()
@@ -26,3 +33,10 @@ def test_monitor():
     assert isinstance(port.get_equity(), float)
 
 #TODO MarketDataService imported but no test defined.
+
+@pytest.fixture(autouse=True)
+def setup_and_teardown_db():
+    engine = create_engine(settings.DATABASE_URL, echo=False, future=True, pool_pre_ping=True)
+    Base.metadata.create_all(engine)
+    yield
+    Base.metadata.drop_all(engine)

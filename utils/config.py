@@ -1,6 +1,7 @@
 #Description: Pydantic settings loader with defaults, reading .env.
 import os
-from pydantic import BaseSettings, Field
+from pydantic_settings import BaseSettings
+from pydantic import Field
 from dotenv import load_dotenv
 
 load_dotenv()

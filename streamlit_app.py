@@ -66,31 +66,14 @@ portfolio.set_auto_trade(st.session_state["auto_trade"])
 monitor.set_kill_switch(st.session_state["kill_switch"])
 portfolio.set_confidence_threshold(st.session_state["confidence_threshold"])
 
-st.divider()
-
-# Quick overview (embed dashboard preview)
-from services.portfolio import PortfolioService
-from services.market_data import MarketDataService
-from services.monitor import MonitorService
-from utils.charts import equity_chart, positions_table, exposure_pie
-
-portfolio = PortfolioService.instance()
-market = MarketDataService.instance()
-monitor = MonitorService.instance()
-
-# Update auto-trade and kill-switch in services
-portfolio.set_auto_trade(st.session_state["auto_trade"])
-monitor.set_kill_switch(st.session_state["kill_switch"])
-portfolio.set_confidence_threshold(st.session_state["confidence_threshold"])
-
 # Equity and exposure
 colA, colB = st.columns([2,1])
 with colA:
     eq_df = portfolio.get_equity_curve()
-    st.plotly_chart(equity_chart(eq_df), use_container_width=True)
+    st.plotly_chart(equity_chart(eq_df), use_container_width=True, key="equity_chart")
 with colB:
     exp_df = portfolio.get_exposure_snapshot()
-    st.plotly_chart(exposure_pie(exp_df), use_container_width=True)
+    st.plotly_chart(exposure_pie(exp_df), use_container_width=True, key="equity_pie")
 
 # Open positions
 st.subheader("Open Positions")

@@ -2,7 +2,7 @@
 import uuid
 from typing import List
 from threading import Lock
-from datetime import datetime
+from datetime import datetime,timezone
 
 from utils.config import settings
 from utils.logging import logger
@@ -134,7 +134,7 @@ class ExecutionService:
             self.portfolio.log_event("INFO", f"LIVE FUT BUY {s.symbol} qty={eff_qty:.6f}")
 
     def place_manual(self, symbol: str, side: str, qty: float, entry: float, tp: float, sl: float, market_type: str):
-        s = SignalOut(symbol=symbol, market=market_type, timeframe="manual", ts=datetime.utcnow(), confidence=1.0,
+        s = SignalOut(symbol=symbol, market=market_type, timeframe="manual", ts=datetime.now(timezone.utc), confidence=1.0,
                       expected_return_pct=(tp-entry)/entry*100.0, entry=entry, tp=tp, sl=sl, side=side.upper(), rationale="Manual order")
         if market_type == "spot":
             self._place_spot_order(s, qty)
@@ -146,7 +146,7 @@ class ExecutionService:
         with get_session() as db:
             pos = db.query(Position).filter(Position.status == "open").all()
             for p in pos:
-                p.status = "closed"; p.ts_close = datetime.utcnow()
+                p.status = "closed"; p.ts_close = datetime.now(timezone.utc)
             db.commit()
         return {"closed": len(pos)}
 

@@ -21,7 +21,7 @@ run = st.button("Run Backtest")
 if run:
     df = market.get_candles_df(symbol, timeframe, source="csv", limit=1000)
     bt = sig.quick_backtest(df)
-    st.plotly_chart(backtest_equity_chart(bt["equity_curve"]), use_container_width=True)
+    st.plotly_chart(backtest_equity_chart(bt["equity_curve"]), use_container_width=True, key="Run_backtest_chart")
     st.write("Summary")
     st.json(bt["summary"])
 

@@ -69,7 +69,7 @@ class MarketDataService:
                 return df.tail(limit).copy()
 
         # Synthetic fallback: random walk (for demos)
-        end = datetime.now().isoformat()
+        end = datetime.now()
         if timeframe.endswith("m"):
             minutes = int(timeframe.replace("m",""))
             delta = timedelta(minutes=minutes)

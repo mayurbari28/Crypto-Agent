@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Streamlit: Debug App",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "C:/Users/mayur/anaconda3/envs/CryptoAgent/Scripts/streamlit.exe",  // or just "streamlit" if in PATH
+      "args": [
+        "run",
+        "${workspaceFolder}/streamlit_app.py"                           // change to your app filename
+      ],
+      "console": "integratedTerminal",
+      "env": {},
+      "justMyCode": true
+    }
+  ]
+}

@@ -37,4 +37,4 @@ tabs = st.tabs(symbols)
 for i, sym in enumerate(symbols):
     with tabs[i]:
         df = market.get_candles_df(sym, "1h", limit=200)
-        st.plotly_chart(mini_price_chart(df, sym), use_container_width=True)
+        st.plotly_chart(mini_price_chart(df, sym), use_container_width=True, key="equity_mini_price_chart"+str(i))

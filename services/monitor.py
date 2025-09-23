@@ -1,7 +1,7 @@
 #Description: Monitoring service enforcing TP/SL and risk checks.
 
 from threading import Lock
-from datetime import datetime
+from datetime import datetime,timezone
 
 from services.market_data import MarketDataService
 from services.portfolio import PortfolioService
@@ -55,7 +55,7 @@ class MonitorService:
                     hit_tp = p.tp and last_price <= p.tp
                     hit_sl = p.sl and last_price >= p.sl
                 if hit_tp or hit_sl:
-                    p.status = "closed"; p.ts_close = datetime.utcnow()
+                    p.status = "closed"; p.ts_close = datetime.now(timezone.utc)
                     self.portfolio.adjust_balance(p.market, delta=p.unrealized_pnl)
                     self.portfolio.log_event("INFO", f"Exit {p.symbol} {'TP' if hit_tp else 'SL'} @ {last_price:.6f} pnl={p.unrealized_pnl:.2f}")
             db.commit()

@@ -58,7 +58,7 @@ else:
     selected_symbol = st.selectbox("Symbol", options=[s.symbol for s in signals])
     sel = next(s for s in signals if s.symbol == selected_symbol)
     fig = signal_chart(sel)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="Symbol_chart")
 
     with st.expander("Manual Override & Place Order"):
         side = st.selectbox("Side", options=["BUY","SELL"], index=0)
