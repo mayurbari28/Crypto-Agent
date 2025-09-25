@@ -13,7 +13,7 @@ from utils.charts import signal_chart
 st.title("Screener & Signals")
 
 signal_service = SignalService.instance()
-portfolio = PortfolioService.instance()
+#portfolio = PortfolioService.instance()
 exec_service = ExecutionService.instance()
 crew = CrewOrchestrator.instance()
 
