@@ -1,5 +1,6 @@
 # Description: Implements LLMResearchAgent (OpenAI JSON), RuleBasedResearchAgent (deterministic), and RuleBasedRiskAgent.
 from __future__ import annotations
+from email import message
 from typing import Dict, Any, List, Tuple
 
 from utils.config import settings
@@ -42,6 +43,7 @@ class LLMResearchAgent:
             "features": features,
             "regime": regime
         }
+        logger.info(f"Quering to LLM for {signal.symbol}")
         try:
             resp = self._client.chat.completions.create(
                 model=self.model,
@@ -53,10 +55,12 @@ class LLMResearchAgent:
                 max_tokens=self.max_tokens,
             )
             text = resp.choices[0].message.content.strip()
+            logger.info(f'Response received from LLM : {text}')
             data = JsonTool.parse_json_from_text(text)
             conf_delta = float(data.get("confidence_delta", 0.0))
             conf_delta = max(-0.15, min(0.15, conf_delta))
             notes = data.get("notes") or self._compose_default_notes(signal, features, regime)
+            logger.info(f'Notes for Symbol {signal.symbol} : {notes}')
             # Normalize risk flags to short phrases if present
             flags = data.get("risk_flags") if isinstance(data.get("risk_flags"), list) else []
             if flags:
