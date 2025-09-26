@@ -66,31 +66,35 @@ class CrewOrchestrator:
             regime = {"label": "unknown", "trend_strength": 0.0, "volatility": "med"}
 
         enriched: List[SignalOut] = []
-        for s in signals:
+        for signal in signals:
             try:
-                feats = self.features.latest_features(s.symbol, timeframe)
+                feats = self.features.latest_features(signal.symbol, timeframe)
                 # Research rationale (LLM or rule-based)
-                research_out = self.research_agent.analyze(signal=s, features=feats, regime=regime)
+                research_out = self.research_agent.analyze(signal=signal, features=feats, regime=regime)
                 research_notes = research_out.get("notes", "")
                 conf_delta_research = float(research_out.get("confidence_delta", 0.0))
                 # Apply risk overlay adjustments
-                conf_delta_risk, risk_reasons = self.risk_agent.apply(signal=s, features=feats, regime=regime)
-
+                conf_delta_risk, risk_reasons = self.risk_agent.apply(signal=signal, features=feats, regime=regime)
+                
+                #log reasons
+                logger.info(f'Signal {signal.symbol} | conf_delta_risk:{conf_delta_risk} | risk_reasons:{risk_reasons}')
+                
                 # Update confidence with bounded adjustments
-                new_conf = float(s.confidence) + conf_delta_research + conf_delta_risk
+                new_conf = float(signal.confidence) + conf_delta_research + conf_delta_risk
                 new_conf = max(0.0, min(1.0, new_conf))
 
                 # Build rationale
-                segments = [seg for seg in [s.rationale, research_notes] if seg]
+                segments = [seg for seg in [signal.rationale, research_notes] if seg]
                 if risk_reasons:
                     segments.append("Risk: " + "; ".join(risk_reasons))
-                s.confidence = new_conf
-                s.rationale = " | ".join(segments)[:1000]  # keep concise
+                signal.confidence = new_conf
+                signal.rationale = " | ".join(segments)[:1000]  # keep concise
 
-                enriched.append(s)
+                enriched.append(signal)
+                logger.info(f'Enriched Signal {signal.symbol} analysis:{signal.model_dump_json()}')
             except Exception as e:
-                logger.warning(f"Signal enrichment failed for {s.symbol}: {e}")
-                enriched.append(s)
+                logger.warning(f"Signal enrichment failed for {signal.symbol}: {e}")
+                enriched.append(signal)
 
         # Optionally sort by adjusted confidence, then expected return
         try:

@@ -22,7 +22,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     timeframe = st.selectbox("Timeframe", options=["15m","1h","4h","1d"], index=2)
 with col2:
-    universe = st.multiselect("Universe", options=signal_service.default_universe(), default=signal_service.default_universe()[:20])
+    universe = st.multiselect("Universe", options=signal_service.get_universe(), default=signal_service.get_universe()[:20])
 with col3:
     st.write("Scan controls")
     run_scan = st.button("Run Scan Now")

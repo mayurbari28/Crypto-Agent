@@ -15,14 +15,14 @@ from sqlalchemy import create_engine
 
 def test_signal_scan():
     sig = SignalService.instance()
-    out = sig.scan_and_score(sig.default_universe()[:3], "1h")
+    out = sig.scan_and_score(sig.get_universe()[:3], "1h")
     assert isinstance(out, list)
     assert len(out) > 0
 
 def test_execution_sim():
     sig = SignalService.instance()
     ex = ExecutionService.instance()
-    candidates = sig.scan_and_score(sig.default_universe()[:2], "1h")
+    candidates = sig.scan_and_score(sig.get_universe()[:2], "1h")
     res = ex.allocate_and_execute(candidates[:1])
     assert "orders_placed" in res
 

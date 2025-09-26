@@ -17,7 +17,7 @@ def scan_job():
         exec = ExecutionService.instance()
         port = PortfolioService.instance()
         # Universe default top 20
-        universe = sig.default_universe()[:20]
+        universe = sig.get_universe()[:20]
         signals = sig.scan_and_score(universe, timeframe="1h")
         # Auto execute if enabled
         if port._auto_trade:
