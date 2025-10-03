@@ -12,6 +12,7 @@ class SignalOut(BaseModel):
     strategy: str = "ensemble_v1"
     confidence: float
     expected_return_pct: float
+    suggested_leverage: float | None = None
     entry: float
     tp: float
     sl: float

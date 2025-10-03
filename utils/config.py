@@ -1,10 +1,13 @@
 #Description: Pydantic settings loader with defaults, reading .env.
 import os
+import pathlib
+
 from pydantic_settings import BaseSettings
 from pydantic import Field
 from dotenv import load_dotenv
 
-load_dotenv()
+env_path = pathlib.Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 class Settings(BaseSettings):
     APP_ENV: str = Field(default="development")

@@ -9,6 +9,7 @@ from services.execution import ExecutionService
 from ai.crew import CrewOrchestrator
 from utils.config import settings
 from utils.charts import signal_chart
+from utils.logging import logger
 
 st.title("Screener & Signals")
 
@@ -22,14 +23,25 @@ col1, col2, col3 = st.columns(3)
 with col1:
     timeframe = st.selectbox("Timeframe", options=["15m","1h","4h","1d"], index=2)
 with col2:
-    universe = st.multiselect("Universe", options=signal_service.get_universe(), default=signal_service.get_universe()[:20])
+    universe = st.multiselect("Universe", options=signal_service.get_universe())
+    #default=signal_service.get_universe()[:200]
 with col3:
     st.write("Scan controls")
     run_scan = st.button("Run Scan Now")
+    run_scan_all = st.button("Scan All Symbols Now")
 
 if run_scan:
     st.info("Scanning and scoring...")
     base_signals = signal_service.scan_and_score(universe, timeframe)
+    enriched = crew.enrich_signals(base_signals, timeframe=timeframe)
+    st.success("Scan complete.")
+    st.session_state["latest_signals"] = enriched
+
+if run_scan_all:
+    all_symbols=signal_service.get_universe()
+    logger.info(f'Symbols to analyse ===> {all_symbols}')
+    st.info("Scanning and scoring...")
+    base_signals = signal_service.scan_and_score(all_symbols, timeframe)
     enriched = crew.enrich_signals(base_signals, timeframe=timeframe)
     st.success("Scan complete.")
     st.session_state["latest_signals"] = enriched
@@ -39,10 +51,12 @@ if not signals:
     st.warning("No signals available. Click 'Run Scan Now' to generate signals.")
 else:
     df = pd.DataFrame([{
-        "symbol": s.symbol, "market": s.market, "tf": s.timeframe, "confidence": round(s.confidence,3),
-        "exp_return_%": round(s.expected_return_pct,2), "entry": round(s.entry,6),
-        "tp": round(s.tp,6), "sl": round(s.sl,6), "r_r": round((s.tp - s.entry) / (s.entry - s.sl) if (s.entry - s.sl)!=0 else 0, 2),
-        "rationale": s.rationale[:160] + ("..." if len(s.rationale)>160 else "")
+        "Symbol": s.symbol, "Market": s.market, "Time Frame": s.timeframe, "Confidence(%)": round(s.confidence,2)*100 ,
+        "Entry": round(s.entry,6),"Exp. Return %": round(s.expected_return_pct,2),
+        "Suggested Leverage": str(round(s.suggested_leverage))+"x", "Exp Return(+L.)%": round(s.expected_return_pct * s.suggested_leverage),
+        "Target Price": round(s.tp,6), "Stop Loss": round(s.sl,6), 
+        "Risk: Reward": round((s.tp - s.entry) / (s.entry - s.sl) if (s.entry - s.sl)!=0 else 0, 2),
+        "Rationale": s.rationale[:160] + ("..." if len(s.rationale)>160 else "")
     } for s in signals])
     st.dataframe(df, use_container_width=True)
 

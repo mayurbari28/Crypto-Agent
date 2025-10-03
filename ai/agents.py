@@ -15,6 +15,7 @@ class LLMResearchAgent:
     """
     def __init__(self, model: str | None = None, max_tokens: int = 300):
         self.model = model or "gpt-4o-mini"
+        # TODO For Production "GPT-5-mini"
         self.max_tokens = max_tokens
         # Lazy import to avoid hard dependency if key is not present
         try:
@@ -25,25 +26,39 @@ class LLMResearchAgent:
             self._client = None
 
     def analyze(self, signal: SignalOut, features: Dict[str, Any], regime: Dict[str, Any]) -> Dict[str, Any]:
-        if self._client is None or not settings.OPENAI_API_KEY:
-            return {"notes": self._compose_default_notes(signal, features, regime), "confidence_delta": 0.0}
+        features = dict(features or {})
+        regime = regime or {}
+        leverage = self._resolve_leverage(features, regime)
 
+        if self._client is None or not settings.OPENAI_API_KEY:
+            return {
+                "notes": self._compose_default_notes(signal, features, regime),
+                "confidence_delta": 0.0,
+                "suggested_leverage": leverage,
+            }
+        
         system = (
             "You are a concise crypto swing-trading analyst. Given numeric features and a preliminary signal, "
             "write a short rationale and a small confidence adjustment in JSON. "
+            "Consider leverage impacts on profit/loss and recommend an appropriate leverage. "
             "Keep the adjustment conservative within [-0.15, 0.15]."
         )
         user = {
-            "instruction": "Analyze the following and return JSON with keys: confidence_delta ([-0.15,0.15]), notes (<=280 chars), risk_flags (list).",
-            "signal": {
-                "symbol": signal.symbol, "market": signal.market, "timeframe": signal.timeframe,
-                "confidence": signal.confidence, "expected_return_pct": signal.expected_return_pct,
-                "entry": signal.entry, "tp": signal.tp, "sl": signal.sl, "side": signal.side
-            },
-            "features": features,
-            "regime": regime
-        }
+            "instruction": (
+                "Analyze the following and return JSON with keys: confidence_delta ([-0.15,0.15]), "
+                "notes (<=280 chars), risk_flags (list), suggested_leverage (float), "
+                "leveraged_expected_return_pct (float). Account for leverage in profit expectations."),
+                "signal": {
+                    "symbol": signal.symbol, "market": signal.market, "timeframe": signal.timeframe,
+                    "confidence": signal.confidence, "expected_return_pct": signal.expected_return_pct,
+                    "entry": signal.entry, "tp": signal.tp, "sl": signal.sl, "side": signal.side
+                },
+            "features": {**features, "leverage": leverage},
+            "regime": regime,
+         }
+
         logger.info(f"Quering to LLM for {signal.symbol}")
+
         try:
             resp = self._client.chat.completions.create(
                 model=self.model,
@@ -65,10 +80,30 @@ class LLMResearchAgent:
             flags = data.get("risk_flags") if isinstance(data.get("risk_flags"), list) else []
             if flags:
                 notes = f"{notes} [Flags: {', '.join(flags[:3])}]"
-            return {"notes": notes, "confidence_delta": conf_delta}
+            #return {"notes": notes, "confidence_delta": conf_delta}
+            suggested_leverage = float(data.get("suggested_leverage", leverage))
+            return {
+                "notes": notes,
+                "confidence_delta": conf_delta,
+                "suggested_leverage": suggested_leverage,
+            }
         except Exception as e:
             logger.warning(f"LLM analysis failed: {e}")
-            return {"notes": self._compose_default_notes(signal, features, regime), "confidence_delta": 0.0}
+            return {
+                "notes": self._compose_default_notes(signal, features, regime),
+                "confidence_delta": 0.0,
+                "suggested_leverage": leverage,
+            }
+
+    def _resolve_leverage(self, features: Dict[str, Any], regime: Dict[str, Any]) -> float:
+        leverage = features.get("leverage")
+        if leverage is None:
+            leverage = regime.get("default_leverage") or regime.get("leverage")
+        try:
+            leverage = float(leverage)
+        except (TypeError, ValueError):
+            leverage = 1.0
+        return max(1.0, leverage)
 
     def _compose_default_notes(self, signal: SignalOut, f: Dict[str, Any], regime: Dict[str, Any]) -> str:
         trend = f.get("trend_strength", 0.0)

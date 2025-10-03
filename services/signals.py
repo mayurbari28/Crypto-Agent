@@ -83,14 +83,17 @@ class SignalService:
         if now - updated > timedelta(days=1):
             try:
                 response = self.coindcx.get("/exchange/v1/markets")
-                symbols = [s for s in response if isinstance(s, str)]
+                symbols = [s for s in response if isinstance(s, str) and s.endswith("USDT")]
                 if symbols:
                     self._universe_cache = {"updated": now, "symbols": symbols}
                     logger.info("Default universe refreshed from CoinDCX API (%d symbols).", len(symbols))
                 else:
                     logger.warning("CoinDCX API returned no USDT markets; keeping cached universe.")
             except Exception as exc:
-                logger.warning("Unable to refresh CoinDCX universe: %s. Using cached list.", exc)
+                logger.warning(f"Unable to refresh CoinDCX universe: {exc}. Using cached list.", exc)
+        else:
+            #if list is returned from cache then no need to pass thru filter again.
+            return self._universe_cache.get("symbols",[])
 
         return self._filter_markets_by_volume(self._universe_cache.get("symbols", FALLBACK_UNIVERSE))
     
@@ -112,16 +115,14 @@ class SignalService:
         """
         try:
             resp = self.coindcx.get("/exchange/ticker")
-            tickers = resp.json()
+            tickers = resp if isinstance(resp, list) else []
             ticker_map = {
                 t.get("market"): t
                 for t in tickers
                 if isinstance(t, dict) and isinstance(t.get("market"), str)
             }
         except Exception as exc:
-            logger.warning(
-                "Volume filter skipped; unable to fetch CoinDCX ticker data: %s", exc
-            )
+            logger.warning(f"Volume filter skipped; unable to fetch CoinDCX ticker data: {exc}", exc)
             return symbols
 
         filtered: List[str] = []
@@ -170,8 +171,13 @@ class SignalService:
             slow=macd_slow,
             signal=macd_signal,
         )
-        df["macd"] = macd[f"MACD_{macd_cols_prefix}"]
-        df["macd_signal"] = macd[f"MACDs_{macd_cols_prefix}"]
+        if macd is not None and f"MACD_{macd_cols_prefix}" in macd and f"MACDs_{macd_cols_prefix}" in macd:
+            df["macd"] = macd[f"MACD_{macd_cols_prefix}"]
+            df["macd_signal"] = macd[f"MACDs_{macd_cols_prefix}"]
+        else:
+            df["macd"] = None
+            df["macd_signal"] = None
+            logger.warning(f"MACD computation failed or insufficient data (len={len(df)})")
 
         df["atr"] = ta.atr(df["high"], df["low"], df["close"], length=atr_len)
 
@@ -185,7 +191,11 @@ class SignalService:
 
         # ADX for regime detection (trending vs ranging)
         adx = ta.adx(df["high"], df["low"], df["close"], length=adx_len)
-        df["adx"] = adx[f"ADX_{adx_len}"]
+        if adx is not None and f"ADX_{adx_len}" in adx:
+            df["adx"] = adx[f"ADX_{adx_len}"]
+        else:
+            df["adx"] = None
+            logger.warning(f"ADX computation failed or insufficient data (len={len(df)})")
 
         return df    
     

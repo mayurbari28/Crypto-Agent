@@ -9,6 +9,9 @@ from models.schemas import SignalOut
 from ai.tools import FeatureTool, RegimeTool, RiskTool
 from ai.agents import RuleBasedResearchAgent, RuleBasedRiskAgent, LLMResearchAgent
 
+from models.db import get_session
+from models.orm import Signal
+
 class CrewOrchestrator:
     """
     Orchestrates agentic enrichment of numeric trading signals.
@@ -58,21 +61,25 @@ class CrewOrchestrator:
         if not signals:
             return signals
 
-        try:
-            # Compute market regime context once (for BTCUSDT 4h by default)
-            regime = self.regime.get_regime(base_symbol="BTCUSDT", timeframe="4h")
-        except Exception as e:
-            logger.warning(f"Regime computation failed: {e}")
-            regime = {"label": "unknown", "trend_strength": 0.0, "volatility": "med"}
-
         enriched: List[SignalOut] = []
         for signal in signals:
             try:
+
+                try:
+                    # Compute market regime context
+                    regime = self.regime.get_regime(base_symbol=signal.symbol, timeframe="4h")
+                except Exception as e:
+                    logger.warning(f"Regime computation failed: {e}")
+                    regime = {"label": "unknown", "trend_strength": 0.0, "volatility": "med"}
+
                 feats = self.features.latest_features(signal.symbol, timeframe)
                 # Research rationale (LLM or rule-based)
                 research_out = self.research_agent.analyze(signal=signal, features=feats, regime=regime)
                 research_notes = research_out.get("notes", "")
                 conf_delta_research = float(research_out.get("confidence_delta", 0.0))
+                signal.suggested_leverage=research_out.get("suggested_leverage",1)
+                signal.leveraged_expected_return_pct=research_out.get("leveraged_expected_return_pct",1)
+
                 # Apply risk overlay adjustments
                 conf_delta_risk, risk_reasons = self.risk_agent.apply(signal=signal, features=feats, regime=regime)
                 
@@ -91,6 +98,16 @@ class CrewOrchestrator:
                 signal.rationale = " | ".join(segments)[:1000]  # keep concise
 
                 enriched.append(signal)
+
+                #Store the analysis in table
+                with get_session() as s:
+                    s.add(Signal(symbol=signal.symbol,market=signal.market,timeframe=signal.timeframe,
+                                 ts=signal.ts,strategy=signal.strategy,confidence=signal.confidence,
+                                 expected_return_pct=signal.expected_return_pct,entry=signal.entry,
+                                 tp=signal.tp,sl=signal.sl,side=signal.side,rationale=signal.rationale
+                                 ))
+                    s.commit()
+
                 logger.info(f'Enriched Signal {signal.symbol} analysis:{signal.model_dump_json()}')
             except Exception as e:
                 logger.warning(f"Signal enrichment failed for {signal.symbol}: {e}")

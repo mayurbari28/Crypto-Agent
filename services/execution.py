@@ -67,7 +67,7 @@ class ExecutionService:
                 if s.market == "spot":
                     self._place_spot_order(s, qty)
                 else:
-                    self._place_futures_order(s, qty, leverage=settings.MAX_LEVERAGE)
+                    self._place_futures_order(s, qty, leverage=s.suggested_leverage)
                 placed += 1
             except Exception as e:
                 logger.exception(f"Order failed for {s.symbol}: {e}")
@@ -121,7 +121,8 @@ class ExecutionService:
             self.portfolio.adjust_balance("futures", delta=-margin)
             self.portfolio.log_event("INFO", f"SIM FUT BUY {s.symbol} qty={eff_qty:.6f} lev={leverage} @ {s.entry:.6f}")
         else:
-            res = self.futures.place_limit_order(symbol=s.symbol, side="buy", qty=eff_qty, price=s.entry, client_id=client_id, leverage=leverage)
+            res = self.futures.place_limit_order(symbol=s.symbol, side="buy", qty=eff_qty, price=s.entry, client_id=client_id, leverage=leverage,
+                                                 stop_loss=s.sl,take_profit=s.tp)
             with get_session() as db:
                 order = Order(symbol=s.symbol, market="futures", side="BUY", qty=eff_qty, price=s.entry,
                               status=res.get("status","new"), exchange_order_id=res.get("order_id"), tp_price=s.tp, sl_price=s.sl, client_id=client_id)
