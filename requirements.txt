@@ -1,5 +1,5 @@
 streamlit==1.38.0
-pandas==2.2.2
+pandas==2.3.2
 numpy==2.0.1
 #pandas-ta==0.3.14b0
 pandas-ta>=0.4.71b0      # change from 0.3.14b0 to latest compatible version
